@@ -2,34 +2,27 @@ import React, { FC, useEffect, useState } from 'react';
 
 import { Dictionary } from '@nest-react/domain';
 
-import { API_URL } from '~/config';
-import { Logger, checkServerVersion } from '~/utils';
+import { useGreeting } from '~/hooks';
+import { checkServerVersion } from '~/utils';
 
 export const App: FC<unknown> = () => {
-  const [response, setResponse] = useState<string>('NO SERVER RESPONSE');
-
-  useEffect(() => {
-    async function fetchResponse(): Promise<void> {
-      try {
-        const res = await fetch(API_URL);
-        const data = await res.text();
-        setResponse(data);
-      } catch (err) {
-        Logger.error(err);
-      }
-    }
-
-    fetchResponse();
-  }, []);
+  const [name, setName] = useState('');
+  const { greeting, isLoading, error, refetch } = useGreeting();
 
   useEffect(() => {
     checkServerVersion();
   }, []);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    refetch(name || undefined);
+  };
+
   const dictExample: Dictionary<number> = {
     first: 1,
     second: 2,
   };
+
   return (
     <>
       <div>
@@ -37,11 +30,31 @@ export const App: FC<unknown> = () => {
         <code>@nest-react/domain</code> package:
         <pre>{JSON.stringify(dictExample)}</pre>
       </div>
+
       <div>
-        And here we get a response from the API:
-        <br />
-        <br />
-        {response}
+        <h3>Greeting API Example</h3>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Enter your name"
+          />
+          <button type="submit">Get Greeting</button>
+        </form>
+
+        {isLoading && <p>Loading...</p>}
+        {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
+        {greeting && (
+          <div>
+            <p>
+              <strong>Message:</strong> {greeting.message}
+            </p>
+            <p>
+              <strong>Timestamp:</strong> {greeting.timestamp}
+            </p>
+          </div>
+        )}
       </div>
     </>
   );
